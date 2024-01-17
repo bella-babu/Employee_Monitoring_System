@@ -1,10 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 import cv2
 import face_recognition
 import os
 import datetime
-
 import numpy as np
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -38,7 +38,7 @@ def register_employee_face(employee_id):
     # Save the first captured face encoding
     if face_encodings:
         face_encoding = face_encodings[0]
-        np.save(os.path.join(employee_faces_folder, f"employee_{employee_id}.npy"), face_encoding)
+        np.save(os.path.join(employee_faces_folder, f"employee_{employee_id}"), face_encoding)
 
     video_capture.release()
     cv2.destroyAllWindows()
@@ -74,16 +74,19 @@ def mark_attendance():
             if employee_id:
                 existing_record = next((record for record in attendance_records if record["employee_id"] == employee_id), None)
 
-                if existing_record:
+                if existing_record :
                     existing_record["time_out"] = current_time
                     print(f"Employee {employee_id} attendance updated with sign-out time at {current_time}")
                 else:
                     attendance_records.append({"employee_id": employee_id, "time_in": current_time})
                     print(f"Employee {employee_id} attendance marked with sign-in time at {current_time}")
                 break
+            else:
+                print("Face not recognized. Please try again.")
 
     video_capture.release()
     cv2.destroyAllWindows()
+
 
 def recognize_employee(face_encoding):
     for file in os.listdir(employee_faces_folder):
@@ -93,7 +96,8 @@ def recognize_employee(face_encoding):
 
             # Adjust the threshold as needed
             if distance < 0.5:
-                return file.split("_")[1]  # Extract employee_id from the file name
+                # Extract employee_id from the file name
+                return os.path.splitext(file)[0].split("_")[1] 
 
     return None
 
@@ -114,6 +118,25 @@ def register():
 def mark_attendance_route():
     mark_attendance()
     return redirect(url_for('index'))
+
+# @app.route('/download_attendance')
+# def download_attendance():
+#     csv_data = generate_csv()
+#     response = Response(csv_data, content_type='text/csv')
+#     response.headers["Content-Disposition"] = "attachment; filename=attendance_records.csv"
+#     return response
+
+# def generate_csv():
+#     csv_data = "Employee ID,Sign-In Time,Sign-Out Time\n"
+#     for record in attendance_records:
+#         time_in = record['time_in'].strftime("%Y-%m-%d %H:%M:%S") if 'time_in' in record else ''
+#         time_out = record['time_out'].strftime("%Y-%m-%d %H:%M:%S") if 'time_out' in record else ''
+#         csv_data += f"{record['employee_id']},{time_in},{time_out}\n"
+#     return csv_data
+
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
