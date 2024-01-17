@@ -72,14 +72,24 @@ def mark_attendance():
             employee_id = recognize_employee(face_encodings[0])
 
             if employee_id:
-                existing_record = next((record for record in attendance_records if record["employee_id"] == employee_id), None)
+                existing_signin_record = next((record for record in attendance_records if record["employee_id"] == employee_id and "time_out" not in record), None)
 
-                if existing_record :
-                    existing_record["time_out"] = current_time
-                    print(f"Employee {employee_id} attendance updated with sign-out time at {current_time}")
+                if existing_signin_record:
+                    # Check if the existing record has a sign-out time
+                    if "time_out" in existing_signin_record:
+                        # Create a new record with sign-in time
+                        attendance_records.append({"employee_id": employee_id, "time_in": current_time})
+                        print(f"Employee {employee_id} attendance marked with sign-in time at {current_time}")
+                    else:
+                        # Update the existing record with sign-out time
+                        existing_signin_record["time_out"] = current_time
+                        print(f"Employee {employee_id} attendance updated with sign-out time at {current_time}")
+                        break
                 else:
+                    # Create a new record with sign-in time
                     attendance_records.append({"employee_id": employee_id, "time_in": current_time})
                     print(f"Employee {employee_id} attendance marked with sign-in time at {current_time}")
+
                 break
             else:
                 print("Face not recognized. Please try again.")
