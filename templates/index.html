@@ -93,6 +93,9 @@
       Download Attendance as CSV
     </button>
 
+    <form action="{{ url_for('mark_attendance_route') }}" method="post">
+      <button type="submit" class="btn">Mark Attendance</button>
+    </form>
     <script>
       function downloadCSV() {
         const table = document.querySelector("table");
